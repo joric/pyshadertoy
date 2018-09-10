@@ -34,6 +34,7 @@ txh = 256
 
 size = txw * txh
 texture = 0
+shader_body = ''
 
 buf = (GLuint * size)(0)
 
@@ -105,7 +106,8 @@ def animation():
 
     ftime = time.time() - start_time
 
-    glUniform1fvARB( Sp.indexOfUniformVariable("iTime"), 1, struct.pack("f", ftime))
+    if 'iTime' in shader_body:
+        glUniform1fvARB( Sp.indexOfUniformVariable("iTime"), 1, struct.pack("f", ftime))
 
     glutPostRedisplay()
 
@@ -205,7 +207,10 @@ void main() {
     mainImage(fragColor, gl_FragCoord.xy);
 }
 """
-        sourceString = header + open(fileName, 'r').read() + footer
+        global shader_body
+        shader_body = open(fileName, 'r').read()
+
+        sourceString = header + shader_body + footer
         glShaderSourceARB(shaderHandle, [sourceString] )
         self.__checkOpenGLError( )
         glCompileShaderARB( shaderHandle )
