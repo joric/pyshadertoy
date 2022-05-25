@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # see http://www.iquilezles.org/apps/shadertoy/
 
@@ -13,7 +13,7 @@ try:
     from OpenGL.GL import *
     from OpenGL.GLU import *
 except:
-    print "Cannot find PyOpenGL module"
+    print("Cannot find PyOpenGL module")
     sys.exit()
 
 try:
@@ -21,8 +21,11 @@ try:
     from OpenGL.GL.ARB.fragment_shader import *
     from OpenGL.GL.ARB.vertex_shader import *
 except:
-    print "Shaders are not supported (need opengl 2.0+)"
+    print("Shaders are not supported (need opengl 2.0+)")
     sys.exit()
+
+#import sys
+#glutInit(sys.argv)
 
 start_time = 0
 
@@ -56,7 +59,7 @@ def gen(param):
         buf.pop(0)
         buf.append( random.randint(0,0xffffffff) )
 
-    data = array.array("I", buf).tostring()
+    data = array.array("I", buf).tobytes()
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, txw, txh, 0, GL_RGBA, GL_UNSIGNED_BYTE, data)
 
 def mouse(button, state, x, y):
@@ -129,8 +132,8 @@ def init():
     glEnableClientState( GL_VERTEX_ARRAY )
     vertices = array.array('h', [0,0, 1,0, 0,1, 1,1])
     texcoord = array.array('f', [0,0, 1,0, 0,1, 1,1])
-    glVertexPointer(2,GL_SHORT, 0, vertices.tostring())
-    glTexCoordPointer(2,GL_FLOAT, 0, texcoord.tostring())
+    glVertexPointer(2,GL_SHORT, 0, vertices.tobytes())
+    glTexCoordPointer(2,GL_FLOAT, 0, texcoord.tobytes())
 
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
@@ -166,14 +169,14 @@ class ShaderProgram ( object ):
         """Check if all extensions in a list are present."""
         for ext in extensions:
             if ( not ext ):
-                print "Driver does not support ", ext
+                print("Driver does not support ", ext)
                 sys.exit()
 
     def __checkOpenGLError( self ):
         """Print OpenGL error message."""
         err = glGetError()
         if ( err != GL_NO_ERROR ):
-            print 'GLERROR: ', gluErrorString( err )
+            print('GLERROR: ', gluErrorString( err ))
             sys.exit()
 
     def reset( self ):
@@ -217,7 +220,7 @@ void main() {
         success = glGetObjectParameterivARB( shaderHandle, 
             GL_OBJECT_COMPILE_STATUS_ARB)
         if (not success):
-            print glGetInfoLogARB( shaderHandle )
+            print(glGetInfoLogARB( shaderHandle ))
             sys.exit( )
         glAttachObjectARB( self.__shaderProgramID, shaderHandle )
         self.__checkOpenGLError( )
@@ -230,7 +233,7 @@ void main() {
         success = glGetObjectParameterivARB( self.__shaderProgramID, 
             GL_OBJECT_LINK_STATUS_ARB )
         if (not success):
-            print glGetInfoLogARB(self.__shaderProgramID)
+            print(glGetInfoLogARB(self.__shaderProgramID))
             sys.exit()
         else:
             self.__programReady = True
@@ -242,7 +245,7 @@ void main() {
             self.__isEnabled=True
             self.__checkOpenGLError( )
         else:
-            print "Shaders not compiled/linked properly, enable() failed"
+            print("Shaders not compiled/linked properly, enable() failed")
 
     def disable( self ):
         """De-activate shader programs."""
@@ -253,13 +256,13 @@ void main() {
     def indexOfUniformVariable( self, variableName ):
         """Find the index of a uniform variable."""
         if not self.__programReady:
-            print "\nShaders not compiled/linked properly"
+            print("\nShaders not compiled/linked properly")
             result = -1
         else:
             result = glGetUniformLocationARB( self.__shaderProgramID, variableName)
             self.__checkOpenGLError( )
         if result < 0:
-            print 'Variable "%s" not known to the shader' % ( variableName )
+            print('Variable "%s" not known to the shader' %  variableName )
             sys.exit( )
         else:
             return result
@@ -267,13 +270,13 @@ void main() {
     def indexOfVertexAttribute( self, attributeName ):
         """Find the index of an attribute variable."""
         if not self.__programReady:
-            print "\nShaders not compiled/linked properly"
+            print("\nShaders not compiled/linked properly")
             result = -1
         else:
             result = glGetAttribLocationARB( self.__shaderProgramID, attributeName )
             self.__checkOpenGLError( )
         if result < 0:
-            print 'Attribute "%s" not known to the shader' % ( attributeName )
+            print('Attribute "%s" not known to the shader' % attributeName )
             sys.exit( )
         else:
             return result
@@ -287,11 +290,11 @@ if __name__ == '__main__':
         filename = sys.argv[1]
     else:
         filename = "rage.glsl"
-    
+
     glutInit()
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA)
     glutInitWindowSize( width, height )
-    glutInitWindowPosition((glutGet(GLUT_SCREEN_WIDTH)-width)/2, (glutGet(GLUT_SCREEN_HEIGHT)-height)/2);
+    glutInitWindowPosition((glutGet(GLUT_SCREEN_WIDTH)-width)//2, (glutGet(GLUT_SCREEN_HEIGHT)-height)//2);
     glutCreateWindow("shadertoy")
 
     init()
