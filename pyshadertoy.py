@@ -60,9 +60,12 @@ def motion(x, y):
     flx = x
     fly = height-y
 
-    for iMouse in ('iMouse','mouse'):
-        if iMouse in shader_body:
-            glUniform4fvARB(Sp.indexOfUniformVariable(iMouse), 1, struct.pack("ffff", flx,fly,0,0))
+    for var in ('iMouse', 'mouse'):
+        if 'uniform vec4 '+var in shader_body:
+            glUniform4fvARB(Sp.indexOfUniformVariable(var), 1, struct.pack("ffff", flx,fly,0,0))
+        if 'uniform vec2 '+var in shader_body:
+            glUniform4fvARB(Sp.indexOfUniformVariable(var), 1, struct.pack("ff", flx,fly))
+
 
 def gen(generate):
     if (generate):
@@ -111,9 +114,9 @@ def reshape(w, h):
     glOrtho(0, 1, 1, 0, -1, 1);
     glMatrixMode(GL_MODELVIEW);
 
-    for iResolution in ('iResolution', 'resolution'):
-        if iResolution in shader_body:
-            glUniform2fvARB(Sp.indexOfUniformVariable(iResolution), 1, struct.pack("ff", w, h))
+    for var in ('iResolution', 'resolution'):
+        if 'uniform vec2 '+var in shader_body:
+            glUniform2fvARB(Sp.indexOfUniformVariable(var), 1, struct.pack("ff", w, h))
 
 def animation():
     dump()
@@ -123,9 +126,9 @@ def animation():
 
     ftime = time.time() - start_time
 
-    for iTime in ('iTime', 'time'):
-        if iTime in shader_body:
-            glUniform1fvARB(Sp.indexOfUniformVariable(iTime), 1, struct.pack("f", ftime))
+    for var in ('iTime', 'time'):
+        if 'uniform float '+var in shader_body:
+            glUniform1fvARB(Sp.indexOfUniformVariable(var), 1, struct.pack("f", ftime))
 
     glutPostRedisplay()
 
