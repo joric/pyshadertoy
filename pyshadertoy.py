@@ -25,13 +25,13 @@ except:
     print("Shaders are not supported (need opengl 2.0+)")
     sys.exit()
 
-#import sys
-#glutInit(sys.argv)
-
 start_time = 0
 
 width = 512
 height = 512
+
+# non-fullscreen window
+ww, wh = width, height
 
 # texture size
 txw = 256
@@ -41,139 +41,11 @@ size = txw * txh
 texture = 0
 shader_body = ''
 fullscreen = 0
-
 buf = (GLuint * size)(0)
-
-def dump():
-    a = (GLuint * size)(0)
-    glReadPixels(0, 0, txw, txh, GL_RGBA, GL_UNSIGNED_BYTE, a);
-    for i in range(txw):
-        v = a[i]
-#       print "%08x" % (v),
-#   print 
-
-
-def mouse(button, state, x, y):
-    motion(x, y)
-
-def motion(x, y):
-
-    flx = x
-    fly = height-y
-
-    for var in ('iMouse', 'mouse'):
-        if 'uniform vec4 '+var in shader_body:
-            glUniform4fvARB(Sp.indexOfUniformVariable(var), 1, struct.pack("ffff", flx,fly,0,0))
-        if 'uniform vec2 '+var in shader_body:
-            glUniform4fvARB(Sp.indexOfUniformVariable(var), 1, struct.pack("ff", flx,fly))
-
-
-def xor_texture(buf, w, h):
-    for y in range(h):
-        for x in range(w):
-            c = x ^ y
-            buf[y*w + x] = (c<<24)|(c<<16)|(c<<8)|c
-
-def gen(generate):
-    if generate:
-        xor_texture(buf, txw, txh)
-
-    data = array.array("I", buf).tobytes()
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, txw, txh, 0, GL_RGBA, GL_UNSIGNED_BYTE, data)
-
-def togglefullscreen():
-    global fullscreen
-
-    if fullscreen:
-        sw, sh = glutGet(GLUT_SCREEN_WIDTH), glutGet(GLUT_SCREEN_HEIGHT)
-        glutPositionWindow((sw - width) // 2, (sh - height) // 2)
-        glutReshapeWindow(width, height);
-    else:
-        glutFullScreen()
-
-    glutPostRedisplay()
-    fullscreen = not fullscreen
-
-def special(key, x,y):
-    if key==GLUT_KEY_LEFT:
-        pass
-    elif key==GLUT_KEY_RIGHT:
-        pass
-
-def keyboard(key,x,y):
-    if key==b'\x1b' or key==b'\x03':
-        os._exit(0)
-    elif key==b'f':
-        togglefullscreen()
-
-    dump()
-    gen(0)
-    glutPostRedisplay( )
-
-    return 0
-
-def reshape(w, h):
-    glViewport(0, 0, w, h);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, 1, 1, 0, -1, 1);
-    glMatrixMode(GL_MODELVIEW);
-
-    for var in ('iResolution', 'resolution'):
-        if 'uniform vec2 '+var in shader_body:
-            glUniform2fvARB(Sp.indexOfUniformVariable(var), 1, struct.pack("ff", w, h))
-
-def animation():
-    dump()
-    gen(0)
-
-    time.sleep(0.01)
-
-    ftime = time.time() - start_time
-
-    for var in ('iTime', 'time'):
-        if 'uniform float '+var in shader_body:
-            glUniform1fvARB(Sp.indexOfUniformVariable(var), 1, struct.pack("f", ftime))
-
-    glutPostRedisplay()
-
-def init():
-
-    global buf
-    global texture
-
-    texture = glGenTextures(1)
-    glBindTexture(GL_TEXTURE_2D, texture)
-    glPixelStorei(GL_UNPACK_ALIGNMENT,1)
-
-    for i in range( size ):
-         buf[i] = random.randint(0, 0xffffffff)
-
-    gen(1)
-
-    glEnableClientState( GL_TEXTURE_COORD_ARRAY )
-    glEnableClientState( GL_VERTEX_ARRAY )
-    vertices = array.array('h', [0,0, 1,0, 0,1, 1,1])
-    texcoord = array.array('f', [0,0, 1,0, 0,1, 1,1])
-    glVertexPointer(2,GL_SHORT, 0, vertices.tobytes())
-    glTexCoordPointer(2,GL_FLOAT, 0, texcoord.tobytes())
-
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-    glEnable(GL_TEXTURE_2D);
-
-
-def display( ):
-#   glEnable(GL_SCISSOR_TEST);
-#   glScissor( 0,0,txw, txh);
-    glDisable(GL_DEPTH_TEST);
-    glClearColor ( 0.0, 0.0, 0.0, 0.0 )
-    glClear(GL_COLOR_BUFFER_BIT)
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glutSwapBuffers()
+Sp = None
+g_filename = ''
 
 class ShaderProgram ( object ):
-    """Manage GLSL programs."""
     def __init__( self ):
         self.__requiredExtensions = ["GL_ARB_fragment_shader",
             "GL_ARB_vertex_shader",
@@ -189,21 +61,18 @@ class ShaderProgram ( object ):
         self.__shaderObjectList = []
 
     def checkExtensions( self, extensions ):
-        """Check if all extensions in a list are present."""
         for ext in extensions:
             if ( not ext ):
                 print("Driver does not support ", ext)
                 sys.exit()
 
     def __checkOpenGLError( self ):
-        """Print OpenGL error message."""
         err = glGetError()
         if ( err != GL_NO_ERROR ):
             print('GLERROR: ', gluErrorString( err ))
             sys.exit()
 
-    def reset( self ):
-        """Disable and remove all shader programs"""
+    def reset(self):
         for shaderID in self.__shaderObjectList:
             glDetachObjectARB( self.__shaderProgramID, shaderID )
             glDeleteObjectARB( shaderID )
@@ -216,7 +85,7 @@ class ShaderProgram ( object ):
         self.__programReady = False
 
     def addShader( self, shaderType, fileName ):
-        shaderHandle = glCreateShaderObjectARB( shaderType )
+        shaderHandle = glCreateShaderObjectARB(shaderType)
         self.__checkOpenGLError( )
 
         global shader_body
@@ -267,9 +136,7 @@ class ShaderProgram ( object ):
         else:
             self.__programReady = True
 
-
-    def enable( self ):
-        """Activate shader programs."""
+    def enable(self):
         if self.__programReady:
             glUseProgramObjectARB( self.__shaderProgramID )
             self.__isEnabled=True
@@ -277,14 +144,12 @@ class ShaderProgram ( object ):
         else:
             print("Shaders not compiled/linked properly, enable() failed")
 
-    def disable( self ):
-        """De-activate shader programs."""
+    def disable(self):
         glUseProgramObjectARB( 0 )
         self.__isEnabled=False
         self.__checkOpenGLError( )
 
     def indexOfUniformVariable( self, variableName ):
-        """Find the index of a uniform variable."""
         if not self.__programReady:
             print("\nShaders not compiled/linked properly")
             result = -1
@@ -298,7 +163,6 @@ class ShaderProgram ( object ):
             return result
 
     def indexOfVertexAttribute( self, attributeName ):
-        """Find the index of an attribute variable."""
         if not self.__programReady:
             print("\nShaders not compiled/linked properly")
             result = -1
@@ -315,8 +179,135 @@ class ShaderProgram ( object ):
         return self.__isEnabled
 
 
+def togglefullscreen():
+    global fullscreen,ww,wh
+
+    if fullscreen:
+        sw, sh = glutGet(GLUT_SCREEN_WIDTH), glutGet(GLUT_SCREEN_HEIGHT)
+        glutPositionWindow((sw - ww) // 2, (sh - wh) // 2)
+        glutReshapeWindow(ww, wh);
+    else:
+        glutFullScreen()
+
+    glutPostRedisplay()
+    fullscreen = not fullscreen
+
+def reshape(w, h):
+    global width, height
+    width, height = w, h
+
+    glViewport(0, 0, w, h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, 1, 1, 0, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+
+    for var in ('iResolution', 'resolution'):
+        if 'uniform vec2 '+var in shader_body:
+            glUniform2fvARB(Sp.indexOfUniformVariable(var), 1, struct.pack("ff", w, h))
+
+def animation():
+    ftime = time.time() - start_time
+
+    for var in ('iTime', 'time'):
+        if 'uniform float '+var in shader_body:
+            glUniform1fvARB(Sp.indexOfUniformVariable(var), 1, struct.pack("f", ftime))
+
+    glutPostRedisplay()
+
+def init():
+    global buf, texture
+
+    texture = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, texture)
+    glPixelStorei(GL_UNPACK_ALIGNMENT,1)
+
+    for y in range(txw):
+        for x in range(txh):
+            c = x ^ y
+            buf[y*txw + x] = (c<<16)|(c<<8)|c
+
+    data = array.array("I", buf).tobytes()
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, txw, txh, 0, GL_RGBA, GL_UNSIGNED_BYTE, data)
+
+    glEnableClientState( GL_TEXTURE_COORD_ARRAY )
+    glEnableClientState( GL_VERTEX_ARRAY )
+    vertices = array.array('h', [0,0, 1,0, 0,1, 1,1])
+    texcoord = array.array('f', [0,0, 1,0, 0,1, 1,1])
+    glVertexPointer(2,GL_SHORT, 0, vertices.tobytes())
+    glTexCoordPointer(2,GL_FLOAT, 0, texcoord.tobytes())
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+    glEnable(GL_TEXTURE_2D);
+
+def display():
+    glDisable(GL_DEPTH_TEST);
+    glClearColor(0.0, 0.0, 0.0, 0.0)
+    glClear(GL_COLOR_BUFFER_BIT)
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glutSwapBuffers()
+
+def mouse(button, state, x, y):
+    motion(x, y)
+
+def motion(x, y):
+    flx = x
+    fly = height-y
+
+    for var in ('iMouse', 'mouse'):
+        if 'uniform vec4 '+var in shader_body:
+            glUniform4fvARB(Sp.indexOfUniformVariable(var), 1, struct.pack("ffff", flx,fly,0,0))
+        if 'uniform vec2 '+var in shader_body:
+            glUniform4fvARB(Sp.indexOfUniformVariable(var), 1, struct.pack("ff", flx,fly))
+
+def keyboard(key,x,y):
+    if key==b'\x1b' or key==b'\x03':
+        os._exit(0)
+    elif key==b'f':
+        togglefullscreen()
+
+    glutPostRedisplay()
+
 def load(filename):
-    pass
+    global Sp, g_filename, start_time
+
+    if not os.path.exists(filename):
+        return
+
+    g_filename = filename
+
+    start_time = time.time()
+    Sp = ShaderProgram()
+    Sp.addShader(GL_FRAGMENT_SHADER_ARB, filename)
+    Sp.linkShaders()
+    Sp.enable()
+
+    reshape(width, height)
+
+    path, name = os.path.split(filename)
+
+    glutSetWindowTitle("pyshadertoy - %s" % name)
+
+def load_near_file(step):
+    global g_filename
+    path, name = os.path.split(g_filename)
+    files = glob.glob('*.glsl')
+    i = files.index(name) if name in files else -1
+    load(files[(len(files)+i+step)%len(files)])
+
+def load_next_file():
+    return load_near_file(+1)
+
+def load_prev_file():
+    return load_near_file(-1)
+
+def special(key, x,y):
+    global g_filename
+    if key==GLUT_KEY_LEFT:
+        load_prev_file()
+    elif key==GLUT_KEY_RIGHT:
+        load_next_file()
 
 if __name__ == '__main__':
 
@@ -325,24 +316,16 @@ if __name__ == '__main__':
     else:
         filename = "rage.glsl"
 
-    #path, filename = os.path.split(filename)
-    #print(glob.glob('*.glsl'))
-    #print(path, filename)
-
     glutInit()
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA)
-    glutInitWindowSize( width, height )
+    glutInitWindowSize(width, height)
     glutInitWindowPosition((glutGet(GLUT_SCREEN_WIDTH)-width)//2, (glutGet(GLUT_SCREEN_HEIGHT)-height)//2);
-    glutCreateWindow("shadertoy")
+    glutCreateWindow("")
 
     init()
-
-    Sp = ShaderProgram()
-    Sp.addShader(GL_FRAGMENT_SHADER_ARB, filename)
-    Sp.linkShaders()
-    Sp.enable()
-
     start_time = time.time()
+
+    load_next_file()
 
     glutDisplayFunc(display)
     glutKeyboardFunc(keyboard)
@@ -350,5 +333,6 @@ if __name__ == '__main__':
     glutMotionFunc(motion);
     glutReshapeFunc(reshape);
     glutIdleFunc(animation)
+    glutSpecialFunc(special)
     glutMainLoop()
 
