@@ -33,8 +33,9 @@ start_time = 0
 width = 512
 height = 512
 
-txw = width
-txh = height
+# texture size
+txw = 256
+txh = 256
 
 size = txw * txh
 texture = 0
@@ -67,10 +68,16 @@ def motion(x, y):
             glUniform4fvARB(Sp.indexOfUniformVariable(var), 1, struct.pack("ff", flx,fly))
 
 
+def xor_texture(buf, w, h):
+    for y in range(h):
+        for x in range(w):
+            c = x ^ y
+            buf[y*w + x] = (c<<24)|(c<<16)|(c<<8)|c
+
 def gen(generate):
-    if (generate):
-        for i in range( size ):
-             buf[i] = random.randint(0, 0xffffffff)
+    if generate:
+        xor_texture(buf, txw, txh)
+
     data = array.array("I", buf).tobytes()
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, txw, txh, 0, GL_RGBA, GL_UNSIGNED_BYTE, data)
 
@@ -94,11 +101,9 @@ def special(key, x,y):
         pass
 
 def keyboard(key,x,y):
-    key = key.decode()
-
-    if key==chr(27) or key==chr(3):
+    if key==b'\x1b' or key==b'\x03':
         os._exit(0)
-    elif key=='f':
+    elif key==b'f':
         togglefullscreen()
 
     dump()
@@ -319,6 +324,10 @@ if __name__ == '__main__':
         filename = sys.argv[1]
     else:
         filename = "rage.glsl"
+
+    #path, filename = os.path.split(filename)
+    #print(glob.glob('*.glsl'))
+    #print(path, filename)
 
     glutInit()
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA)
