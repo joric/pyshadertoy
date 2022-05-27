@@ -261,14 +261,6 @@ def motion(x, y):
         if 'uniform vec2 '+var in shader_body:
             glUniform4fvARB(Sp.indexOfUniformVariable(var), 1, struct.pack("ff", flx,fly))
 
-def keyboard(key,x,y):
-    if key==b'\x1b' or key==b'\x03':
-        os._exit(0)
-    elif key==b'f':
-        togglefullscreen()
-
-    glutPostRedisplay()
-
 def load(filename):
     global Sp, g_filename, start_time
 
@@ -302,6 +294,12 @@ def special(key, x,y):
         load(get_next_file(-1))
     elif key==GLUT_KEY_RIGHT:
         load(get_next_file(+1))
+
+def keyboard(key,x,y):
+    if key==b'\x1b' or key==b'\x03':
+        os._exit(0)
+    elif key==b'f' or key==b'\x0d':
+        togglefullscreen()
 
 if __name__ == '__main__':
 
