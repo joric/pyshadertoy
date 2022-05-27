@@ -289,32 +289,26 @@ def load(filename):
 
     glutSetWindowTitle("pyshadertoy - %s" % name)
 
-def load_near_file(step):
+def get_next_file(step):
     global g_filename
     path, name = os.path.split(g_filename)
     files = glob.glob('*.glsl')
-    i = files.index(name) if name in files else -1
-    load(files[(len(files)+i+step)%len(files)])
-
-def load_next_file():
-    return load_near_file(+1)
-
-def load_prev_file():
-    return load_near_file(-1)
+    i = files.index(name) if name in files else 0
+    return files[(len(files)+i+step)%len(files)]
 
 def special(key, x,y):
     global g_filename
     if key==GLUT_KEY_LEFT:
-        load_prev_file()
+        load(get_next_file(-1))
     elif key==GLUT_KEY_RIGHT:
-        load_next_file()
+        load(get_next_file(+1))
 
 if __name__ == '__main__':
 
     if len(sys.argv) > 1:
         filename = sys.argv[1]
     else:
-        filename = "rage.glsl"
+        filename = get_next_file(0)
 
     glutInit()
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA)
@@ -325,7 +319,7 @@ if __name__ == '__main__':
     init()
     start_time = time.time()
 
-    load_next_file()
+    load(filename)
 
     glutDisplayFunc(display)
     glutKeyboardFunc(keyboard)
