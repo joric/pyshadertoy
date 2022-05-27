@@ -64,14 +64,10 @@ def motion(x, y):
         if iMouse in shader_body:
             glUniform4fvARB(Sp.indexOfUniformVariable(iMouse), 1, struct.pack("ffff", flx,fly,0,0))
 
-def gen(param):
-    if (param):
+def gen(generate):
+    if (generate):
         for i in range( size ):
              buf[i] = random.randint(0, 0xffffffff)
-    else:
-        return
-        buf.pop(0)
-        buf.append( random.randint(0,0xffffffff) )
     data = array.array("I", buf).tobytes()
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, txw, txh, 0, GL_RGBA, GL_UNSIGNED_BYTE, data)
 
