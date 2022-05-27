@@ -7,6 +7,7 @@ import array
 import random
 import time
 import struct
+import glob
 
 try:
     from OpenGL.GLUT import *
@@ -87,6 +88,12 @@ def togglefullscreen():
     glutPostRedisplay()
     fullscreen = not fullscreen
 
+def special(key, x,y):
+    if key==GLUT_KEY_LEFT:
+        pass
+    elif key==GLUT_KEY_RIGHT:
+        pass
+
 def keyboard(key,x,y):
     key = key.decode()
 
@@ -112,9 +119,7 @@ def reshape(w, h):
         if iResolution in shader_body:
             glUniform2fvARB(Sp.indexOfUniformVariable(iResolution), 1, struct.pack("ff", w, h))
 
-
 def animation():
-
     dump()
     gen(0)
 
@@ -206,54 +211,6 @@ class ShaderProgram ( object ):
         self.__checkOpenGLError( )
         self.__programReady = False
 
-    '''
-    def addShader( self, shaderType, fileName ):
-        """Read a shader program from a file.
-
-        The program is load and compiled"""
-        shaderHandle = glCreateShaderObjectARB( shaderType )
-        self.__checkOpenGLError( )
-        header = """#version 300 es
-precision mediump float;
-uniform vec2 iResolution;
-uniform float iTime;
-uniform vec4 iMouse;
-"""
-        footer = """
-out vec4 fragColor;
-void main() {
-    mainImage(fragColor, gl_FragCoord.xy);
-}
-"""
-        global shader_body
-        shader_body = open(fileName, 'r').read()
-
-        sourceString = header + shader_body + footer
-        glShaderSourceARB(shaderHandle, [sourceString] )
-        self.__checkOpenGLError( )
-        glCompileShaderARB( shaderHandle )
-        success = glGetObjectParameterivARB( shaderHandle, 
-            GL_OBJECT_COMPILE_STATUS_ARB)
-        if (not success):
-            print(glGetInfoLogARB( shaderHandle ))
-            sys.exit( )
-        glAttachObjectARB( self.__shaderProgramID, shaderHandle )
-        self.__checkOpenGLError( )
-        self.__shaderObjectList.append( shaderHandle )
-
-    def linkShaders( self ):
-        """Link compiled shader programs."""
-        glLinkProgramARB( self.__shaderProgramID )
-        self.__checkOpenGLError( )
-        success = glGetObjectParameterivARB( self.__shaderProgramID, 
-            GL_OBJECT_LINK_STATUS_ARB )
-        if (not success):
-            print(glGetInfoLogARB(self.__shaderProgramID))
-            sys.exit()
-        else:
-            self.__programReady = True
-    '''
-
     def addShader( self, shaderType, fileName ):
         shaderHandle = glCreateShaderObjectARB( shaderType )
         self.__checkOpenGLError( )
@@ -261,11 +218,22 @@ void main() {
         global shader_body
         shader_body = open(fileName, 'r').read()
 
-        header = "#version 300 es\nprecision mediump float;\nuniform vec2 iResolution;\nuniform float iTime;\nuniform vec4 iMouse;\n"
+        header = "#version 300 es\nprecision mediump float;\n"
         footer = "out vec4 fragColor;\nvoid main() { mainImage(fragColor, gl_FragCoord.xy);}\n"
 
+        s = ''
+
         if 'iResolution' in shader_body:
-            shader_body = header + shader_body
+            s += 'uniform vec2 iResolution;\n'
+
+        if 'iTime' in shader_body:
+            s += 'uniform float iTime;\n'
+
+        if 'iMouse' in shader_body:
+            s += 'uniform vec4 iMouse;\n'
+
+        if s != '':
+            shader_body = header + s + shader_body
 
         if 'void main(' not in shader_body:
             shader_body += footer
@@ -341,6 +309,10 @@ void main() {
     
     def isEnabled( self ):
         return self.__isEnabled
+
+
+def load(filename):
+    pass
 
 if __name__ == '__main__':
 
