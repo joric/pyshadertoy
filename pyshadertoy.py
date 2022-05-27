@@ -289,11 +289,15 @@ def get_next_file(step):
     return files[(len(files)+i+step)%len(files)]
 
 def special(key, x,y):
-    global g_filename
+    global g_filename, start_time
     if key==GLUT_KEY_LEFT:
         load(get_next_file(-1))
     elif key==GLUT_KEY_RIGHT:
         load(get_next_file(+1))
+    if key==GLUT_KEY_UP:
+        start_time -= 0.1
+    elif key==GLUT_KEY_DOWN:
+        start_time += 0.1
 
 def keyboard(key,x,y):
     if key==b'\x1b' or key==b'\x03':
