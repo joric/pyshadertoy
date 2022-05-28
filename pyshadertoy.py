@@ -91,8 +91,7 @@ class ShaderProgram ( object ):
         global shader_body
         shader_body = open(fileName, 'r').read()
 
-        header = "#version 300 es\nprecision mediump float;\n"
-        footer = "out vec4 fragColor;\nvoid main() { mainImage(fragColor, gl_FragCoord.xy);}\n"
+        header = "#version 300 es\nprecision highp float;\n"
 
         s = ''
 
@@ -105,13 +104,18 @@ class ShaderProgram ( object ):
         if 'iMouse' in shader_body:
             s += 'uniform vec4 iMouse;\n'
 
+        #s += 'uniform sampler2D iChannel0;\n';
+        #s += 'uniform sampler2D iChannel1;\n';
+
         if s != '':
             shader_body = header + s + shader_body
 
         if 'void main(' not in shader_body:
-            shader_body += footer
+            shader_body += "out vec4 fragColor;\nvoid main() { mainImage(fragColor, gl_FragCoord.xy);}\n"
 
         sourceString = shader_body
+
+        open("out.txt", "w").write(sourceString)
 
         glShaderSourceARB(shaderHandle, [sourceString] )
         self.__checkOpenGLError( )
