@@ -308,6 +308,8 @@ def keyboard(key,x,y):
         os._exit(0)
     elif key==b'f' or key==b'\x0d':
         togglefullscreen()
+    elif key==b' ':
+        load(get_next_file(+1))
 
 if __name__ == '__main__':
 
