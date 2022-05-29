@@ -104,8 +104,9 @@ class ShaderProgram ( object ):
         if 'iMouse' in shader_body:
             s += 'uniform vec4 iMouse;\n'
 
-        #s += 'uniform sampler2D iChannel0;\n';
-        #s += 'uniform sampler2D iChannel1;\n';
+        for i in range(4):
+            if 'iChannel%d' % i in shader_body:
+                s += 'uniform sampler2D iChannel%d;\n' % i;
 
         if s != '':
             shader_body = header + s + shader_body
@@ -115,7 +116,7 @@ class ShaderProgram ( object ):
 
         sourceString = shader_body
 
-        open("out.txt", "w").write(sourceString)
+        open("_out.glsl", "w").write(sourceString)
 
         glShaderSourceARB(shaderHandle, [sourceString] )
         self.__checkOpenGLError( )
